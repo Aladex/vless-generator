@@ -1,0 +1,180 @@
+name: Build and Push Docker Image
+
+on:
+  push:
+    branches: [ main, master, develop ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main, master ]
+
+env:
+  REGISTRY: docker.io
+  IMAGE_NAME: vless-generator
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+
+    - name: Cache Go modules
+      uses: actions/cache@v3
+      with:
+        path: ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
+
+    - name: Download dependencies
+      run: go mod download
+
+    - name: Run tests
+      run: go test -v ./...
+
+    - name: Run go vet
+      run: go vet ./...
+
+    - name: Build application
+      run: go build -v .
+
+  build-and-push:
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Log in to Docker Hub
+      if: github.event_name != 'pull_request'
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.REGISTRY }}/${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
+          type=semver,pattern={{major}}
+          type=sha,prefix={{branch}}-
+          type=raw,value=latest,enable={{is_default_branch}}
+
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ./Dockerfile
+        platforms: linux/amd64,linux/arm64
+        push: ${{ github.event_name != 'pull_request' }}
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+    - name: Generate deployment artifact
+      if: github.event_name != 'pull_request'
+      run: |
+        mkdir -p deployment
+        cat > deployment/docker-compose.yml << EOF
+        version: '3.8'
+        
+        services:
+          vless-generator:
+            image: ${{ env.REGISTRY }}/${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:latest
+            container_name: vless-generator
+            ports:
+              - "8080:8080"
+            environment:
+              - LOG_LEVEL=info
+              - LOG_FORMAT=json
+            command: [
+              "-server", "vless.example.com",
+              "-server-port", "443",
+              "-ws-path", "/websocket",
+              "-log-level", "info",
+              "-log-format", "json"
+            ]
+            restart: unless-stopped
+            healthcheck:
+              test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1"]
+              interval: 30s
+              timeout: 10s
+              retries: 3
+              start_period: 40s
+        EOF
+        
+        cat > deployment/README.md << EOF
+        # VLESS Generator Deployment
+        
+        ## Quick Start with Docker
+        
+        \`\`\`bash
+        # Pull and run the latest image
+        docker run -d \\
+          --name vless-generator \\
+          -p 8080:8080 \\
+          ${{ env.REGISTRY }}/${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:latest \\
+          -server your-server.com \\
+          -server-port 443 \\
+          -ws-path /websocket
+        \`\`\`
+        
+        ## Docker Compose
+        
+        \`\`\`bash
+        # Start the service
+        docker-compose up -d
+        
+        # View logs
+        docker-compose logs -f
+        
+        # Stop the service
+        docker-compose down
+        \`\`\`
+        
+        ## Configuration
+        
+        Available environment variables and command-line options:
+        - \`-server\`: VLESS server address (default: vless.example.com)
+        - \`-server-port\`: VLESS server port (default: 443)
+        - \`-ws-path\`: WebSocket path (default: /websocket)
+        - \`-port\`: Service port (default: 8080)
+        - \`-log-level\`: Log level (debug, info, warn, error)
+        - \`-log-format\`: Log format (json, text)
+        
+        ## Health Check
+        
+        The service exposes a health check endpoint at \`/health\`.
+        
+        ## Usage
+        
+        Visit: http://localhost:8080/vless/your-uuid-here
+        Or: http://localhost:8080/neko/your-uuid-here
+        EOF
+
+    - name: Upload deployment artifacts
+      if: github.event_name != 'pull_request'
+      uses: actions/upload-artifact@v3
+      with:
+        name: deployment-files
+        path: deployment/
