@@ -5,7 +5,7 @@ A professional, containerized service for generating VLESS proxy configurations 
 ![Go Version](https://img.shields.io/badge/Go-1.21+-blue.svg)
 ![Docker](https://img.shields.io/badge/Docker-Supported-blue.svg)
 ![License](https://img.shields.io/badge/License-MIT-green.svg)
-![Build Status](https://github.com/yourusername/vless-generator/workflows/Build%20and%20Push%20Docker%20Image/badge.svg)
+![Build Status](https://github.com/aladex/vless-generator/workflows/Build%20and%20Push%20Docker%20Image/badge.svg)
 
 ## 🚀 Features
 
@@ -39,7 +39,7 @@ A professional, containerized service for generating VLESS proxy configurations 
 docker run -d \
   --name vless-generator \
   -p 8080:8080 \
-  yourusername/vless-generator:latest \
+  aladex/vless-generator:latest \
   -server your-server.com \
   -server-port 443 \
   -ws-path /websocket
@@ -49,7 +49,7 @@ docker run -d \
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/vless-generator.git
+git clone https://github.com/aladex/vless-generator.git
 cd vless-generator
 
 # Copy and customize environment file
@@ -67,7 +67,7 @@ docker-compose logs -f
 
 ```bash
 # Clone and build
-git clone https://github.com/yourusername/vless-generator.git
+git clone https://github.com/aladex/vless-generator.git
 cd vless-generator
 go build .
 
@@ -97,14 +97,14 @@ docker run -d \
   --name vless-generator \
   -p 8080:8080 \
   -e LOG_LEVEL=info \
-  yourusername/vless-generator:latest
+  aladex/vless-generator:latest
 ```
 
 ### Method 2: Pre-built Binary
 
 ```bash
 # Download from releases
-wget https://github.com/yourusername/vless-generator/releases/latest/download/vless-generator-linux-amd64
+wget https://github.com/aladex/vless-generator/releases/latest/download/vless-generator-linux-amd64
 chmod +x vless-generator-linux-amd64
 ./vless-generator-linux-amd64 -server your-server.com
 ```
@@ -112,7 +112,7 @@ chmod +x vless-generator-linux-amd64
 ### Method 3: Build from Source
 
 ```bash
-git clone https://github.com/yourusername/vless-generator.git
+git clone https://github.com/aladex/vless-generator.git
 cd vless-generator
 go mod download
 go build -o vless-generator .
@@ -122,7 +122,7 @@ go build -o vless-generator .
 ### Method 4: System Service Installation
 
 ```bash
-git clone https://github.com/yourusername/vless-generator.git
+git clone https://github.com/aladex/vless-generator.git
 cd vless-generator
 sudo ./install.sh
 ```
@@ -162,7 +162,7 @@ version: '3.8'
 
 services:
   vless-generator:
-    image: yourusername/vless-generator:latest
+    image: aladex/vless-generator:latest
     container_name: vless-generator
     ports:
       - "8080:8080"
@@ -326,7 +326,7 @@ vless-generator/
 
 ```bash
 # Clone repository
-git clone https://github.com/yourusername/vless-generator.git
+git clone https://github.com/aladex/vless-generator.git
 cd vless-generator
 
 # Install dependencies
@@ -488,7 +488,7 @@ Enable debug logging for detailed information:
 docker run -d \
   --name vless-generator-debug \
   -p 8080:8080 \
-  yourusername/vless-generator:latest \
+  aladex/vless-generator:latest \
   -log-level debug
 ```
 
@@ -522,7 +522,7 @@ We welcome contributions! Please follow these guidelines:
 
 ```bash
 # Fork and clone
-git clone https://github.com/yourusername/vless-generator.git
+git clone https://github.com/aladex/vless-generator.git
 cd vless-generator
 
 # Install pre-commit hooks (optional)
@@ -549,9 +549,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Support
 
-- **Issues**: [GitHub Issues](https://github.com/yourusername/vless-generator/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/yourusername/vless-generator/discussions)
-- **Documentation**: [Wiki](https://github.com/yourusername/vless-generator/wiki)
+- **Issues**: [GitHub Issues](https://github.com/aladex/vless-generator/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/aladex/vless-generator/discussions)
+- **Documentation**: [Wiki](https://github.com/aladex/vless-generator/wiki)
 
 ---
 
