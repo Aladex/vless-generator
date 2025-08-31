@@ -1,0 +1,131 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: vless-generator
+  labels:
+    app: vless-generator
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vless-generator
+  namespace: vless-generator
+  labels:
+    app: vless-generator
+    version: v1
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: vless-generator
+  template:
+    metadata:
+      labels:
+        app: vless-generator
+        version: v1
+    spec:
+      containers:
+      - name: vless-generator
+        image: yourusername/vless-generator:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        env:
+        - name: LOG_LEVEL
+          value: "info"
+        - name: LOG_FORMAT
+          value: "json"
+        args:
+        - "-server"
+        - "vless.example.com"
+        - "-server-port"
+        - "443"
+        - "-ws-path"
+        - "/websocket"
+        - "-dns-server"
+        - "8.8.8.8"
+        - "-doh-server"
+        - "https://223.5.5.5/dns-query"
+        - "-tun-address"
+        - "172.19.0.1/28"
+        - "-mixed-port"
+        - "2080"
+        - "-tun-mtu"
+        - "9000"
+        - "-log-level"
+        - "info"
+        - "-log-format"
+        - "json"
+        - "-port"
+        - "8080"
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+          limits:
+            memory: "128Mi"
+            cpu: "200m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 3
+          failureThreshold: 3
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 65534
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vless-generator-service
+  namespace: vless-generator
+  labels:
+    app: vless-generator
+spec:
+  type: ClusterIP
+  ports:
+  - port: 80
+    targetPort: 8080
+    protocol: TCP
+    name: http
+  selector:
+    app: vless-generator
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vless-generator-config
+  namespace: vless-generator
+  labels:
+    app: vless-generator
+data:
+  server: "vless.example.com"
+  server-port: "443"
+  ws-path: "/websocket"
+  dns-server: "8.8.8.8"
+  doh-server: "https://223.5.5.5/dns-query"
+  tun-address: "172.19.0.1/28"
+  mixed-port: "2080"
+  tun-mtu: "9000"
+  log-level: "info"
+  log-format: "json"
