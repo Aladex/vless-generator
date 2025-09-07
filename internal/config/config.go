@@ -66,7 +66,7 @@ func LoadConfig() *Config {
 
 	// Templates configuration
 	cfg.Templates.Directory = "templates"
-	cfg.Templates.Types = []string{"neko", "vless"}
+	cfg.Templates.Types = []string{"vless"}
 
 	flag.Parse()
 

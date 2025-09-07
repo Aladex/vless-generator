@@ -70,7 +70,7 @@ func main() {
 
 	logger.Info("Service endpoints available:")
 	logger.Infof("  Config pages: http://localhost:%s/<type>/<uuid>", cfg.Server.Port)
-	logger.Info("  Available types: neko, vless")
+	logger.Info("  Available types: vless")
 	logger.Infof("  Health check: http://localhost:%s/health", cfg.Server.Port)
 	logger.Infof("  Config downloads: http://localhost:%s/config/<type>/<uuid>.json", cfg.Server.Port)
 
