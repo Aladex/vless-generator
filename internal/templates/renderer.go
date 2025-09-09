@@ -56,14 +56,15 @@ type HomePageData struct {
 
 // ConfigPageData represents data for config page template
 type ConfigPageData struct {
-	Title       string
-	Language    string
-	Texts       i18n.Texts
-	ConfigType  string
-	UUID        string
-	QRCode      string
-	VlessURL    string
-	QueryString string
+	Title          string
+	Language       string
+	Texts          i18n.Texts
+	ConfigType     string // Uppercase for display (e.g., "VLESS")
+	ConfigTypeOrig string // Original lowercase for URLs (e.g., "vless")
+	UUID           string
+	QRCode         string
+	VlessURL       string
+	QueryString    string
 }
 
 // RenderHomePage renders the home page template

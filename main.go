@@ -56,7 +56,12 @@ func main() {
 	http.HandleFunc("/", middleware.LoggingMiddleware(handler.HomePageHandler))
 	http.HandleFunc("/vless/", middleware.LoggingMiddleware(handler.ConfigPageHandler))
 	http.HandleFunc("/config/", middleware.LoggingMiddleware(handler.ConfigDownloadHandler))
+	http.HandleFunc("/qrcode", middleware.LoggingMiddleware(handler.QRCodeHandler))
 	http.HandleFunc("/health", middleware.LoggingMiddleware(handler.HealthHandler))
+
+	// Setup static file serving
+	fs := http.FileServer(http.Dir("web/static/"))
+	http.Handle("/static/", http.StripPrefix("/static/", fs))
 
 	// Setup graceful shutdown
 	setupGracefulShutdown(logger)

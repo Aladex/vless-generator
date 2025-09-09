@@ -150,14 +150,15 @@ func (h *Handler) ConfigPageHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Prepare template data
 	data := templates.ConfigPageData{
-		Title:       texts["title"],
-		Language:    language,
-		Texts:       texts,
-		ConfigType:  strings.ToUpper(configType),
-		UUID:        uuid,
-		QRCode:      utils.EncodeBase64(qr),
-		VlessURL:    vlessURL,
-		QueryString: queryString,
+		Title:          texts["title"],
+		Language:       language,
+		Texts:          texts,
+		ConfigType:     strings.ToUpper(configType),
+		ConfigTypeOrig: configType, // Keep original lowercase for URLs
+		UUID:           uuid,
+		QRCode:         utils.EncodeBase64(qr),
+		VlessURL:       vlessURL,
+		QueryString:    queryString,
 	}
 
 	// Render template
@@ -229,7 +230,7 @@ func (h *Handler) ConfigDownloadHandler(w http.ResponseWriter, r *http.Request) 
 }
 
 // HealthHandler provides health check endpoint
-func (h *Handler) HealthHandler(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) HealthHandler(w http.ResponseWriter, _ *http.Request) {
 	response := map[string]interface{}{
 		"status":    "healthy",
 		"timestamp": time.Now().UTC().Format(time.RFC3339),
@@ -246,6 +247,85 @@ func (h *Handler) HealthHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.logger.Debug("Health check completed successfully")
+}
+
+// QRCodeHandler generates QR code for VLESS URL
+func (h *Handler) QRCodeHandler(w http.ResponseWriter, r *http.Request) {
+	// Only allow POST requests
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Parse multipart form data
+	if err := r.ParseMultipartForm(32 << 20); err != nil { // 32MB max memory
+		h.logger.WithError(err).Error("Failed to parse multipart form data for QR code generation")
+		http.Error(w, "Invalid form data", http.StatusBadRequest)
+		return
+	}
+
+	// Debug: Log all form values
+	h.logger.WithFields(logrus.Fields{
+		"form_values": r.Form,
+		"post_form":   r.PostForm,
+		"multipart":   r.MultipartForm,
+	}).Debug("Received form data")
+
+	// Try multiple ways to get the URL parameter
+	var vlessURL string
+
+	// Method 1: FormValue
+	vlessURL = r.FormValue("url")
+	h.logger.WithField("method1_formvalue", vlessURL).Debug("Trying FormValue")
+
+	// Method 2: PostFormValue
+	if vlessURL == "" {
+		vlessURL = r.PostFormValue("url")
+		h.logger.WithField("method2_postformvalue", vlessURL).Debug("Trying PostFormValue")
+	}
+
+	// Method 3: MultipartForm
+	if vlessURL == "" && r.MultipartForm != nil {
+		if values, ok := r.MultipartForm.Value["url"]; ok && len(values) > 0 {
+			vlessURL = values[0]
+			h.logger.WithField("method3_multipart", vlessURL).Debug("Trying MultipartForm")
+		}
+	}
+
+	if vlessURL == "" {
+		h.logger.Error("URL parameter is empty or missing after all attempts")
+		http.Error(w, "URL parameter is required", http.StatusBadRequest)
+		return
+	}
+
+	h.logger.WithField("vless_url", vlessURL).Debug("Received VLESS URL for QR code generation")
+
+	// Validate that it's a VLESS URL
+	if !strings.HasPrefix(vlessURL, "vless://") {
+		h.logger.WithField("url", vlessURL).Warn("Invalid VLESS URL format")
+		http.Error(w, "Invalid VLESS URL", http.StatusBadRequest)
+		return
+	}
+
+	// Generate QR code
+	qr, err := qrcode.Encode(vlessURL, qrcode.Medium, 256)
+	if err != nil {
+		h.logger.WithError(err).Error("Failed to generate QR code")
+		http.Error(w, "Failed to generate QR code", http.StatusInternalServerError)
+		return
+	}
+
+	// Set response headers
+	w.Header().Set("Content-Type", "image/png")
+	w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
+
+	// Send QR code as PNG
+	if _, err := w.Write(qr); err != nil {
+		h.logger.WithError(err).Error("Failed to write QR code response")
+		return
+	}
+
+	h.logger.WithField("url_length", len(vlessURL)).Debug("QR code generated successfully")
 }
 
 // generateConfig creates a configuration with the specified UUID
