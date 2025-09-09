@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{.Title}}</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            max-width: 700px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            padding: 40px;
+        }
+        .header {
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        .language-selector {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 20px;
+            padding: 5px;
+        }
+        .language-selector select {
+            background: transparent;
+            border: none;
+            color: white;
+            font-weight: 600;
+            padding: 8px 15px;
+            border-radius: 15px;
+            cursor: pointer;
+        }
+        .language-selector select:focus {
+            outline: none;
+            background: rgba(255,255,255,0.1);
+        }
+        h1 {
+            color: #333;
+            margin: 0 0 10px 0;
+            font-size: 2em;
+        }
+        .subtitle {
+            color: #666;
+            margin: 0;
+        }
+        .form-section {
+            margin: 30px 0;
+        }
+        .form-section h3 {
+            color: #333;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        .form-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .form-group {
+            flex: 1;
+        }
+        label {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+            display: block;
+            font-size: 14px;
+        }
+        input, select {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+            box-sizing: border-box;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        button {
+            padding: 15px 30px;
+            font-size: 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            margin: 20px 0 10px 0;
+            transition: transform 0.2s, box-shadow 0.2s;
+            font-weight: 600;
+            width: 100%;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .result-section {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+            display: none;
+        }
+        .generated-link {
+            word-break: break-all;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border: 1px solid #ddd;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+        .copy-button {
+            background: #28a745;
+            padding: 8px 15px;
+            font-size: 14px;
+            margin: 5px 0;
+            width: auto;
+        }
+        .instructions {
+            color: #666;
+            margin: 20px 0;
+            line-height: 1.6;
+            font-size: 14px;
+        }
+        .advanced-toggle {
+            background: #6c757d;
+            padding: 10px 20px;
+            font-size: 14px;
+            margin: 10px 0;
+            width: auto;
+        }
+        .advanced-section {
+            display: none;
+        }
+        .random-uuid-btn {
+            background: #17a2b8;
+            padding: 8px 15px;
+            font-size: 12px;
+            margin: 5px 0;
+            width: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="language-selector">
+        <select id="languageSelect" onchange="changeLanguage()">
+            <option value="en" {{if eq .Language "en"}}selected{{end}}>English</option>
+            <option value="ru" {{if eq .Language "ru"}}selected{{end}}>Русский</option>
+        </select>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <h1>{{.Texts.title}}</h1>
+            <p class="subtitle">{{.Texts.subtitle}}</p>
+        </div>
+
+        <form id="configForm">
+            <div class="form-section">
+                <h3>{{.Texts.main_params}}</h3>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="type">{{.Texts.config_type}}</label>
+                        <select id="type" name="type" required>
+                            <option value="vless">VLESS</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="uuid">{{.Texts.uuid_label}}</label>
+                        <input type="text" id="uuid" name="uuid" placeholder="{{.Texts.uuid_placeholder}}" required>
+                        <button type="button" class="random-uuid-btn" onclick="generateRandomUUID()">{{.Texts.random_uuid}}</button>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="server">{{.Texts.server_label}}</label>
+                        <input type="text" id="server" name="server" value="{{.DefaultConfig.Server}}" placeholder="{{.Texts.server_placeholder}}" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="port">{{.Texts.server_port}}</label>
+                        <input type="number" id="port" name="port" value="{{.DefaultConfig.ServerPort}}" placeholder="443" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="ws-path">{{.Texts.ws_path}}</label>
+                    <input type="text" id="ws-path" name="ws-path" value="{{.DefaultConfig.WSPath}}" placeholder="/websocket">
+                </div>
+            </div>
+
+            <button type="button" class="advanced-toggle" onclick="toggleAdvanced()">{{.Texts.advanced_params}}</button>
+
+            <div class="advanced-section" id="advancedSection">
+                <div class="form-section">
+                    <h3>{{.Texts.network_settings}}</h3>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="dns-server">{{.Texts.dns_server}}</label>
+                            <input type="text" id="dns-server" name="dns-server" value="{{.DefaultConfig.DNSServer}}" placeholder="8.8.8.8">
+                        </div>
+                        <div class="form-group">
+                            <label for="doh-server">{{.Texts.doh_server}}</label>
+                            <input type="text" id="doh-server" name="doh-server" value="{{.DefaultConfig.DOHServer}}" placeholder="https://223.5.5.5/dns-query">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="tun-address">{{.Texts.tun_address}}</label>
+                            <input type="text" id="tun-address" name="tun-address" value="{{.DefaultConfig.TunAddress}}" placeholder="172.19.0.1/28">
+                        </div>
+                        <div class="form-group">
+                            <label for="mixed-port">{{.Texts.mixed_port}}</label>
+                            <input type="number" id="mixed-port" name="mixed-port" value="{{.DefaultConfig.MixedPort}}" placeholder="2080">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="tun-mtu">{{.Texts.tun_mtu}}</label>
+                        <input type="number" id="tun-mtu" name="tun-mtu" value="{{.DefaultConfig.TunMTU}}" placeholder="9000">
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit">{{.Texts.generate_link}}</button>
+        </form>
+
+        <div class="result-section" id="resultSection">
+            <h3>{{.Texts.ready_link}}</h3>
+            <p>{{.Texts.copy_link_desc}}</p>
+            <div class="generated-link" id="generatedLink"></div>
+            <button type="button" class="copy-button" onclick="copyToClipboard()">{{.Texts.copy_link}}</button>
+            <a id="openLink" href="#" target="_blank">
+                <button type="button">{{.Texts.open_link}}</button>
+            </a>
+        </div>
+
+        <div class="instructions">
+            <p><strong>{{.Texts.instructions_title}}</strong></p>
+            <p>{{.Texts.instruction1}}</p>
+            <p>{{.Texts.instruction2}}</p>
+            <p>{{.Texts.instruction3}}</p>
+            <p>{{.Texts.instruction4}}</p>
+        </div>
+    </div>
+
+    <script>
+        function generateRandomUUID() {
+            const uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                const r = Math.random() * 16 | 0;
+                const v = c == 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+            document.getElementById('uuid').value = uuid;
+        }
+
+        function toggleAdvanced() {
+            const section = document.getElementById('advancedSection');
+            const button = document.querySelector('.advanced-toggle');
+
+            if (section.style.display === 'none' || section.style.display === '') {
+                section.style.display = 'block';
+                button.textContent = '{{.Texts.hide_advanced}}';
+            } else {
+                section.style.display = 'none';
+                button.textContent = '{{.Texts.advanced_params}}';
+            }
+        }
+
+        function copyToClipboard() {
+            const link = document.getElementById('generatedLink').textContent;
+            navigator.clipboard.writeText(link).then(() => {
+                const button = document.querySelector('.copy-button');
+                const originalText = button.textContent;
+                button.textContent = '{{.Texts.copied}}';
+                setTimeout(() => {
+                    button.textContent = originalText;
+                }, 2000);
+            });
+        }
+
+        function changeLanguage() {
+            const language = document.getElementById('languageSelect').value;
+            const currentUrl = new URL(window.location);
+            currentUrl.searchParams.set('lang', language);
+            window.location.href = currentUrl.toString();
+        }
+
+        document.getElementById('configForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const formData = new FormData(this);
+            const type = formData.get('type');
+            const uuid = formData.get('uuid');
+
+            if (!type || !uuid) {
+                alert('{{.Texts.validation_error}}');
+                return;
+            }
+
+            // Build query parameters
+            const params = new URLSearchParams();
+
+            // Add current language
+            params.append('lang', '{{.Language}}');
+
+            // Add all form fields as query parameters (except type and uuid)
+            for (let [key, value] of formData) {
+                if (key !== 'type' && value.trim() !== '') {
+                    params.append(key, value.trim());
+                }
+            }
+
+            // Build the final URL
+            const baseUrl = window.location.origin;
+            const configUrl = baseUrl + '/' + type + '/' + uuid;
+            const fullUrl = params.toString() ? configUrl + '?' + params.toString() : configUrl;
+
+            // Show result
+            document.getElementById('generatedLink').textContent = fullUrl;
+            document.getElementById('openLink').href = fullUrl;
+            document.getElementById('resultSection').style.display = 'block';
+
+            // Scroll to result
+            document.getElementById('resultSection').scrollIntoView({ behavior: 'smooth' });
+        });
+
+        // Generate random UUID on page load for convenience
+        window.addEventListener('load', function() {
+            if (!document.getElementById('uuid').value) {
+                generateRandomUUID();
+            }
+        });
+    </script>
+</body>
+</html>

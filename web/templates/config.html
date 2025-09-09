@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{.Texts.title}} - {{.ConfigType}}</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            max-width: 600px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            padding: 40px;
+        }
+        .language-selector {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 20px;
+            padding: 5px;
+        }
+        .language-selector select {
+            background: transparent;
+            border: none;
+            color: white;
+            font-weight: 600;
+            padding: 8px 15px;
+            border-radius: 15px;
+            cursor: pointer;
+        }
+        .language-selector select:focus {
+            outline: none;
+            background: rgba(255,255,255,0.1);
+        }
+        .header {
+            margin-bottom: 30px;
+        }
+        h1 {
+            color: #333;
+            margin: 0 0 10px 0;
+            font-size: 2em;
+        }
+        .subtitle {
+            color: #666;
+            margin: 0;
+        }
+        .qr-section {
+            margin: 30px 0;
+        }
+        img {
+            margin: 20px 0;
+            border: 2px solid #eee;
+            border-radius: 10px;
+            max-width: 100%;
+            height: auto;
+        }
+        button {
+            padding: 15px 30px;
+            font-size: 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            margin: 10px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            font-weight: 600;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .info-box {
+            font-family: 'Courier New', monospace;
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #667eea;
+        }
+        .config-type {
+            background-color: #e9ecef;
+            padding: 8px 16px;
+            border-radius: 20px;
+            display: inline-block;
+            margin: 10px 0;
+            font-weight: 600;
+            color: #495057;
+        }
+        .vless-url {
+            background-color: #fff3cd;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            word-break: break-all;
+            font-size: 12px;
+            border-left: 4px solid #ffc107;
+            text-align: left;
+        }
+        .instructions {
+            color: #666;
+            margin: 20px 0;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="language-selector">
+        <select id="languageSelect" onchange="changeLanguage()">
+            <option value="en" {{if eq .Language "en"}}selected{{end}}>English</option>
+            <option value="ru" {{if eq .Language "ru"}}selected{{end}}>Русский</option>
+        </select>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <h1>{{.Texts.title}}</h1>
+            <p class="subtitle">{{.Texts.subtitle_config}}</p>
+        </div>
+
+        <div class="config-type">Type: {{.ConfigType}}</div>
+        <div class="info-box">UUID: {{.UUID}}</div>
+
+        <div class="qr-section">
+            <p class="instructions">{{.Texts.qr_instructions}}</p>
+            <img src="data:image/png;base64,{{.QRCode}}" alt="VLESS Configuration QR Code" />
+        </div>
+
+        <div class="vless-url">{{.VlessURL}}</div>
+
+        <div style="margin-top: 30px;">
+            <a href="/config/{{.ConfigType}}/{{.UUID}}.json{{if .QueryString}}?{{.QueryString}}{{end}}" download>
+                <button>{{.Texts.download_json}}</button>
+            </a>
+        </div>
+
+        <div class="instructions">
+            <p><strong>{{.Texts.client_instructions_title}}</strong></p>
+            <p>{{.Texts.client_instruction1}}</p>
+            <p>{{.Texts.client_instruction2}}</p>
+            <p>{{.Texts.client_instruction3}}</p>
+        </div>
+    </div>
+
+    <script>
+        function changeLanguage() {
+            const language = document.getElementById('languageSelect').value;
+            const currentUrl = new URL(window.location);
+            currentUrl.searchParams.set('lang', language);
+            window.location.href = currentUrl.toString();
+        }
+    </script>
+</body>
+</html>

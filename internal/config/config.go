@@ -2,6 +2,8 @@ package config
 
 import (
 	"flag"
+	"net/url"
+	"strconv"
 
 	"github.com/sirupsen/logrus"
 )
@@ -9,17 +11,39 @@ import (
 // Config holds all application configuration
 type Config struct {
 	Server    ServerConfig
-	Network   NetworkConfig
 	Service   ServiceConfig
 	Templates TemplatesConfig
 }
 
 // ServerConfig holds server-specific configuration
 type ServerConfig struct {
-	Port       string
-	Host       string
-	ServerPort int
-	WSPath     string
+	Port string // HTTP server port only
+}
+
+// DynamicConfig holds configuration parameters from GET request
+type DynamicConfig struct {
+	Server     string // VLESS server address
+	ServerPort int    // VLESS server port
+	WSPath     string // WebSocket path
+	DNSServer  string // Remote DNS server
+	DOHServer  string // DNS over HTTPS server
+	TunAddress string // TUN interface address
+	MixedPort  int    // Mixed proxy port
+	TunMTU     int    // TUN interface MTU
+}
+
+// DefaultDynamicConfig returns default values for dynamic configuration
+func DefaultDynamicConfig() *DynamicConfig {
+	return &DynamicConfig{
+		Server:     "vless.example.com",
+		ServerPort: 443,
+		WSPath:     "/websocket",
+		DNSServer:  "8.8.8.8",
+		DOHServer:  "https://223.5.5.5/dns-query",
+		TunAddress: "172.19.0.1/28",
+		MixedPort:  2080,
+		TunMTU:     9000,
+	}
 }
 
 // NetworkConfig holds network-related configuration
@@ -47,18 +71,8 @@ type TemplatesConfig struct {
 func LoadConfig() *Config {
 	cfg := &Config{}
 
-	// Server configuration
-	flag.StringVar(&cfg.Server.Port, "port", "8080", "Port to run the server on")
-	flag.StringVar(&cfg.Server.Host, "server", "vless.example.com", "VLESS server address")
-	flag.IntVar(&cfg.Server.ServerPort, "server-port", 443, "VLESS server port")
-	flag.StringVar(&cfg.Server.WSPath, "ws-path", "/websocket", "WebSocket path")
-
-	// Network configuration
-	flag.StringVar(&cfg.Network.DNSServer, "dns-server", "8.8.8.8", "Remote DNS server address")
-	flag.StringVar(&cfg.Network.DOHServer, "doh-server", "https://223.5.5.5/dns-query", "DNS over HTTPS server")
-	flag.StringVar(&cfg.Network.TunAddress, "tun-address", "172.19.0.1/28", "TUN interface address")
-	flag.IntVar(&cfg.Network.MixedPort, "mixed-port", 2080, "Mixed proxy port")
-	flag.IntVar(&cfg.Network.TunMTU, "tun-mtu", 9000, "TUN interface MTU")
+	// Server configuration - only port for the HTTP server
+	flag.StringVar(&cfg.Server.Port, "port", "8080", "Port to run the HTTP server on")
 
 	// Service configuration
 	flag.StringVar(&cfg.Service.LogLevel, "log-level", "info", "Log level (debug, info, warn, error)")
@@ -99,4 +113,42 @@ func SetupLogging(cfg *Config) {
 		"service": "vless-generator",
 		"version": "1.0.0",
 	}).Info("Logging configured successfully")
+}
+
+// ParseDynamicConfig parses dynamic configuration from URL query parameters
+func ParseDynamicConfig(query url.Values) *DynamicConfig {
+	config := DefaultDynamicConfig()
+
+	if server := query.Get("server"); server != "" {
+		config.Server = server
+	}
+	if port := query.Get("port"); port != "" {
+		if p, err := strconv.Atoi(port); err == nil {
+			config.ServerPort = p
+		}
+	}
+	if wsPath := query.Get("ws-path"); wsPath != "" {
+		config.WSPath = wsPath
+	}
+	if dnsServer := query.Get("dns-server"); dnsServer != "" {
+		config.DNSServer = dnsServer
+	}
+	if dohServer := query.Get("doh-server"); dohServer != "" {
+		config.DOHServer = dohServer
+	}
+	if tunAddress := query.Get("tun-address"); tunAddress != "" {
+		config.TunAddress = tunAddress
+	}
+	if mixedPort := query.Get("mixed-port"); mixedPort != "" {
+		if mp, err := strconv.Atoi(mixedPort); err == nil {
+			config.MixedPort = mp
+		}
+	}
+	if tunMTU := query.Get("tun-mtu"); tunMTU != "" {
+		if mtu, err := strconv.Atoi(tunMTU); err == nil {
+			config.TunMTU = mtu
+		}
+	}
+
+	return config
 }

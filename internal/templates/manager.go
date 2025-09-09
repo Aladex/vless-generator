@@ -6,6 +6,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"vless-generator/internal/config"
+
 	"github.com/sirupsen/logrus"
 )
 
@@ -65,70 +67,15 @@ func (m *Manager) loadTemplate(directory, templateType string) error {
 	return nil
 }
 
-// UpdateTemplates updates all templates with the provided configuration
-func (m *Manager) UpdateTemplates(server string, serverPort int, wsPath string, dnsServer, dohServer, tunAddress string, mixedPort, tunMTU int) {
-	m.logger.WithFields(logrus.Fields{
-		"server":      server,
-		"server_port": serverPort,
-		"ws_path":     wsPath,
-		"dns_server":  dnsServer,
-		"doh_server":  dohServer,
-		"tun_address": tunAddress,
-		"mixed_port":  mixedPort,
-		"tun_mtu":     tunMTU,
-	}).Info("Updating templates with configuration")
-
-	for templateType, template := range m.templates {
-		m.updateTemplate(template, server, serverPort, wsPath, dnsServer, dohServer, tunAddress, mixedPort, tunMTU)
-
-		m.logger.WithField("type", templateType).Debug("Template updated")
-	}
-
-	m.logger.Info("All templates updated successfully")
-}
-
-// updateTemplate updates a single template with configuration values
-func (m *Manager) updateTemplate(template map[string]interface{}, server string, serverPort int, wsPath string, dnsServer, dohServer, tunAddress string, mixedPort, tunMTU int) {
-	// Update server address and port in the template
-	outbound := template["outbounds"].([]interface{})[0].(map[string]interface{})
-	outbound["server"] = server
-	outbound["server_port"] = serverPort
-
-	// Update WebSocket path and Host header
-	transport := outbound["transport"].(map[string]interface{})
-	transport["path"] = wsPath
-	transport["headers"].(map[string]interface{})["Host"] = server
-
-	// Update TLS server name if it exists
-	if tls, ok := outbound["tls"].(map[string]interface{}); ok {
-		if _, hasServerName := tls["server_name"]; hasServerName {
-			tls["server_name"] = server
-		}
-	}
-
-	// Update DNS servers
-	servers := template["dns"].(map[string]interface{})["servers"].([]interface{})
-	servers[0].(map[string]interface{})["address"] = dnsServer
-	servers[1].(map[string]interface{})["address"] = dohServer
-
-	// Update TUN address and MTU
-	inbound := template["inbounds"].([]interface{})[0].(map[string]interface{})
-	inbound["inet4_address"] = []string{tunAddress}
-	inbound["mtu"] = tunMTU
-
-	// Update mixed port
-	inboundMixed := template["inbounds"].([]interface{})[1].(map[string]interface{})
-	inboundMixed["listen_port"] = mixedPort
-
-	// Update DNS rules to use the new server
-	dnsRules := template["dns"].(map[string]interface{})["rules"].([]interface{})
-	dnsRules[0].(map[string]interface{})["domain"] = []string{server}
-}
-
-// GetTemplate returns a template by type
+// GetTemplate returns a copy of the template for the specified type
 func (m *Manager) GetTemplate(templateType string) (map[string]interface{}, bool) {
 	template, exists := m.templates[templateType]
-	return template, exists
+	if !exists {
+		return nil, false
+	}
+
+	// Return a deep copy to avoid modifying the original template
+	return m.deepCopyMap(template), true
 }
 
 // GetTemplateTypes returns all available template types
@@ -138,4 +85,114 @@ func (m *Manager) GetTemplateTypes() []string {
 		types = append(types, templateType)
 	}
 	return types
+}
+
+// GenerateConfig creates a configuration with dynamic parameters
+func (m *Manager) GenerateConfig(templateType, uuid string, dynamicCfg *config.DynamicConfig) (map[string]interface{}, error) {
+	template, exists := m.GetTemplate(templateType)
+	if !exists {
+		return nil, fmt.Errorf("template type %s not found", templateType)
+	}
+
+	// Apply dynamic configuration to the template
+	m.updateTemplateWithDynamicConfig(template, dynamicCfg)
+
+	// Set UUID in the first outbound (proxy)
+	if outbounds, ok := template["outbounds"].([]interface{}); ok && len(outbounds) > 0 {
+		if outbound, ok := outbounds[0].(map[string]interface{}); ok {
+			if outbound["type"] == "vless" {
+				outbound["uuid"] = uuid
+				m.logger.WithField("uuid", uuid).Debug("UUID set in configuration")
+			}
+		}
+	}
+
+	return template, nil
+}
+
+// updateTemplateWithDynamicConfig updates a template with dynamic configuration values
+func (m *Manager) updateTemplateWithDynamicConfig(template map[string]interface{}, dynamicCfg *config.DynamicConfig) {
+	// Update server address and port in the template
+	if outbounds, ok := template["outbounds"].([]interface{}); ok && len(outbounds) > 0 {
+		if outbound, ok := outbounds[0].(map[string]interface{}); ok {
+			outbound["server"] = dynamicCfg.Server
+			outbound["server_port"] = dynamicCfg.ServerPort
+
+			// Update WebSocket path and Host header
+			if transport, ok := outbound["transport"].(map[string]interface{}); ok {
+				transport["path"] = dynamicCfg.WSPath
+				if headers, ok := transport["headers"].(map[string]interface{}); ok {
+					headers["Host"] = dynamicCfg.Server
+				}
+			}
+
+			// Update TLS server name if it exists
+			if tls, ok := outbound["tls"].(map[string]interface{}); ok {
+				if _, hasServerName := tls["server_name"]; hasServerName {
+					tls["server_name"] = dynamicCfg.Server
+				}
+			}
+		}
+	}
+
+	// Update DNS servers
+	if dns, ok := template["dns"].(map[string]interface{}); ok {
+		if servers, ok := dns["servers"].([]interface{}); ok && len(servers) >= 2 {
+			if server0, ok := servers[0].(map[string]interface{}); ok {
+				server0["address"] = dynamicCfg.DNSServer
+			}
+			if server1, ok := servers[1].(map[string]interface{}); ok {
+				server1["address"] = dynamicCfg.DOHServer
+			}
+		}
+	}
+
+	// Update TUN address and MTU
+	if inbounds, ok := template["inbounds"].([]interface{}); ok {
+		if len(inbounds) > 0 {
+			if inbound, ok := inbounds[0].(map[string]interface{}); ok {
+				inbound["inet4_address"] = []string{dynamicCfg.TunAddress}
+				inbound["mtu"] = dynamicCfg.TunMTU
+			}
+		}
+
+		// Update mixed port
+		if len(inbounds) > 1 {
+			if inboundMixed, ok := inbounds[1].(map[string]interface{}); ok {
+				inboundMixed["listen_port"] = dynamicCfg.MixedPort
+			}
+		}
+	}
+}
+
+// deepCopyMap creates a deep copy of a map
+func (m *Manager) deepCopyMap(original map[string]interface{}) map[string]interface{} {
+	result := make(map[string]interface{})
+	for key, value := range original {
+		switch v := value.(type) {
+		case map[string]interface{}:
+			result[key] = m.deepCopyMap(v)
+		case []interface{}:
+			result[key] = m.deepCopySlice(v)
+		default:
+			result[key] = value
+		}
+	}
+	return result
+}
+
+// deepCopySlice creates a deep copy of a slice
+func (m *Manager) deepCopySlice(original []interface{}) []interface{} {
+	result := make([]interface{}, len(original))
+	for i, value := range original {
+		switch v := value.(type) {
+		case map[string]interface{}:
+			result[i] = m.deepCopyMap(v)
+		case []interface{}:
+			result[i] = m.deepCopySlice(v)
+		default:
+			result[i] = value
+		}
+	}
+	return result
 }
