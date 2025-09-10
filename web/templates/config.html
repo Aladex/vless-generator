@@ -8,18 +8,13 @@
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
-    <!-- Header -->
-    <div class="header">
-        <div class="header-content">
-            <h1>{{.Texts.title}}</h1>
-            <div class="header-controls">
-                <div class="language-selector">
-                    <select id="languageSelect" onchange="changeLanguage()">
-                        <option value="en" {{if eq .Language "en"}}selected{{end}}>English</option>
-                        <option value="ru" {{if eq .Language "ru"}}selected{{end}}>Русский</option>
-                    </select>
-                </div>
-            </div>
+    <!-- Compact Language Selector -->
+    <div style="position: absolute; top: 20px; right: 20px; z-index: 1000;">
+        <div class="language-selector">
+            <select id="languageSelect" onchange="changeLanguage()">
+                <option value="en" {{if eq .Language "en"}}selected{{end}}>English</option>
+                <option value="ru" {{if eq .Language "ru"}}selected{{end}}>Русский</option>
+            </select>
         </div>
     </div>
 
@@ -60,9 +55,6 @@
                     <a href="/config/{{.ConfigTypeOrig}}/{{.UUID}}.json{{if .QueryString}}?{{.QueryString}}{{end}}"
                        download class="btn btn-primary btn-large">
                         {{.Texts.download_json}}
-                    </a>
-                    <a href="/" class="btn btn-warning btn-large">
-                        {{.Texts.start_over}}
                     </a>
                 </div>
             </div>
