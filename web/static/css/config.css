@@ -1,0 +1,446 @@
+/* Configuration page styles */
+
+/* Override main-content width limitation for config page */
+.main-content {
+    max-width: none !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+.config-container {
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+/* Card base styles */
+.wizard-card, .config-params, .security-tips {
+    background: var(--card-color);
+    border-radius: 1rem;
+    box-shadow: var(--shadow-lg);
+    padding: 2rem;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.result-section {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+}
+
+.config-param-row {
+    display: flex;
+    align-items: center;
+    padding: 1rem 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.config-param-row:last-child {
+    border-bottom: none;
+}
+
+.config-param-icon {
+    width: 28px;
+    height: 28px;
+    margin-right: 1.25rem;
+    color: var(--text-secondary);
+    flex-shrink: 0;
+}
+
+.config-param-value {
+    font-weight: 500;
+    flex: 1;
+}
+
+.tab-container {
+    display: flex;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 1rem;
+    border-radius: 0.5rem 0.5rem 0 0;
+    overflow: hidden;
+}
+
+.tab-button {
+    flex: 1;
+    padding: 1.25rem;
+    text-align: center;
+    background: var(--card-color);
+    border: none;
+    cursor: pointer;
+    font-weight: 500;
+    color: var(--text-secondary);
+    transition: all 0.2s;
+    position: relative;
+}
+
+.tab-button:hover {
+    background: rgba(0, 123, 255, 0.05);
+    color: var(--primary-color);
+}
+
+.tab-button.active {
+    color: var(--primary-color);
+    background: var(--card-color);
+}
+
+.tab-button.active::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--primary-color);
+}
+
+.tab-content {
+    display: none;
+    padding: 1.5rem 0;
+}
+
+.tab-content.active {
+    display: block;
+    flex: 1 1 auto;
+}
+
+.tab-content h3 {
+    margin-bottom: 1.5rem;
+    color: var(--text-primary);
+    font-size: 1.3rem;
+    font-weight: 600;
+}
+
+.tab-content ol {
+    padding-left: 1.5rem;
+    line-height: 1.8;
+}
+
+.tab-content li {
+    margin-bottom: 1rem;
+    color: var(--text-secondary);
+}
+
+.security-tips h3 {
+    margin-bottom: 1.5rem;
+    color: var(--text-primary);
+    font-size: 1.25rem;
+    flex-shrink: 0;
+}
+
+.security-tips-content {
+    flex: 1 1 auto;
+}
+
+.security-tip-item {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.security-tip-item:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+.security-tip-icon {
+    width: 28px;
+    height: 28px;
+    margin-right: 1.25rem;
+    color: var(--primary-color);
+    flex-shrink: 0;
+}
+
+.security-tip-item p {
+    margin: 0;
+    line-height: 1.6;
+    color: var(--text-secondary);
+}
+
+.security-tip-item strong {
+    color: var(--text-primary);
+}
+
+.uuid-display {
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 0.875rem;
+    word-break: break-all;
+}
+
+.qr-code-container {
+    display: flex;
+    justify-content: center;
+    margin: 2rem 0;
+}
+
+.qr-code-container img {
+    max-width: 280px;
+    height: auto;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.75rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.generated-link {
+    background: #f8f9fa;
+    border: 1px solid var(--border-color);
+    border-radius: 0.75rem;
+    padding: 1rem;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 0.875rem;
+    word-break: break-all;
+    color: var(--text-secondary);
+}
+
+.action-buttons {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+.action-buttons .btn {
+    flex: 1;
+    padding: 1rem 1.5rem;
+    font-weight: 600;
+    border-radius: 0.75rem;
+    text-align: center;
+    text-decoration: none;
+    transition: all 0.2s;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-success {
+    background: #10b981;
+    color: white;
+}
+
+.btn-success:hover {
+    background: #059669;
+    transform: translateY(-2px);
+}
+
+.btn-primary {
+    background: var(--primary-color);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #2563eb;
+    transform: translateY(-2px);
+}
+
+.step-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    color: var(--text-primary);
+}
+
+.result-section p {
+    margin-bottom: 2rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    text-align: center;
+    font-size: 1.1rem;
+}
+
+/* Floating Language Selector */
+.floating-language-selector {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+    font-family: 'Inter', sans-serif;
+}
+
+.language-toggle {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background: white;
+    border: none;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--primary-color, #0066ff);
+    transition: all 0.2s ease;
+    padding: 0;
+}
+
+.language-toggle:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+}
+
+.language-toggle:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(0, 102, 255, 0.3), 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.language-dropdown {
+    position: absolute;
+    top: 56px;
+    right: 0;
+    background: white;
+    border-radius: 1rem;
+    box-shadow: var(--shadow-lg, 0 10px 15px -3px rgba(0, 0, 0, 0.1));
+    padding: 0.5rem;
+    min-width: 160px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.2s ease;
+}
+
+.language-dropdown[aria-hidden="false"] {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.language-dropdown ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.language-dropdown li {
+    margin: 0;
+    padding: 0;
+}
+
+.language-dropdown a {
+    display: block;
+    padding: 0.75rem 1rem;
+    color: var(--text-primary, #333);
+    text-decoration: none;
+    border-radius: 0.5rem;
+    transition: background 0.2s;
+}
+
+.language-dropdown a:hover {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.language-dropdown a.active {
+    font-weight: 600;
+    color: var(--primary-color, #0066ff);
+    background: rgba(0, 102, 255, 0.05);
+}
+
+/* Responsive Design */
+@media (min-width: 1024px) {
+    .config-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: auto auto;
+        grid-template-areas:
+            "wizard params"
+            "steps tips";
+        gap: 1.5rem 2rem;
+        align-items: stretch;
+    }
+
+    .config-left, .config-right {
+        display: contents;
+    }
+
+    /* Explicit grid area assignments */
+    .wizard-main {
+        grid-area: wizard;
+    }
+
+    .steps-card {
+        grid-area: steps;
+    }
+
+    .params-card {
+        grid-area: params;
+    }
+
+    .tips-card {
+        grid-area: tips;
+    }
+
+    /* Ensure all cards fill their grid cells completely */
+    .wizard-card, .config-params, .security-tips {
+        height: 100%;
+        min-height: 100%;
+        margin: 0;
+        align-self: stretch;
+    }
+}
+
+@media (max-width: 1023px) {
+    .config-container {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+        padding: 1.5rem;
+    }
+
+    .config-left, .config-right {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+        padding: 0;
+    }
+
+    .wizard-card, .config-params, .security-tips {
+        margin: 0;
+    }
+}
+
+@media (max-width: 768px) {
+    .config-container {
+        padding: 1rem;
+    }
+
+    .wizard-card, .config-params, .security-tips {
+        padding: 1.5rem;
+    }
+
+    .action-buttons {
+        flex-direction: column;
+    }
+
+    .tab-button {
+        padding: 1rem;
+    }
+
+    .language-toggle {
+        width: 52px;
+        height: 52px;
+    }
+}
+
+@media (max-width: 480px) {
+    .config-container {
+        padding: 0.5rem;
+    }
+
+    .wizard-card, .config-params, .security-tips {
+        padding: 1rem;
+    }
+}
