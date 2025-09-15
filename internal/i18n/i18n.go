@@ -1,13 +1,15 @@
 package i18n
 
 import (
+	"embed"
 	"encoding/json"
 	"fmt"
-	"os"
-	"path/filepath"
 
 	"github.com/sirupsen/logrus"
 )
+
+//go:embed *.json
+var translationFiles embed.FS
 
 // Texts represents all translatable strings
 type Texts map[string]string
@@ -26,14 +28,14 @@ func NewI18n() *I18n {
 	}
 }
 
-// LoadTranslations loads translation files from the specified directory
-func (i *I18n) LoadTranslations(directory string) error {
-	i.logger.WithField("directory", directory).Info("Loading translation files")
+// LoadTranslations loads embedded translation files
+func (i *I18n) LoadTranslations() error {
+	i.logger.Info("Loading embedded translation files")
 
 	languages := []string{"en", "ru"}
 
 	for _, lang := range languages {
-		if err := i.loadLanguage(directory, lang); err != nil {
+		if err := i.loadLanguage(lang); err != nil {
 			return fmt.Errorf("failed to load language %s: %w", lang, err)
 		}
 	}
@@ -42,18 +44,18 @@ func (i *I18n) LoadTranslations(directory string) error {
 	return nil
 }
 
-// loadLanguage loads a single language file
-func (i *I18n) loadLanguage(directory, language string) error {
-	filePath := filepath.Join(directory, language+".json")
+// loadLanguage loads a single embedded language file
+func (i *I18n) loadLanguage(language string) error {
+	fileName := language + ".json"
 
 	i.logger.WithFields(logrus.Fields{
 		"language": language,
-		"path":     filePath,
-	}).Debug("Loading translation file")
+		"file":     fileName,
+	}).Debug("Loading embedded translation file")
 
-	data, err := os.ReadFile(filePath)
+	data, err := translationFiles.ReadFile(fileName)
 	if err != nil {
-		return fmt.Errorf("failed to read translation file: %w", err)
+		return fmt.Errorf("failed to read embedded translation file: %w", err)
 	}
 
 	var texts Texts

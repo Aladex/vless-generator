@@ -31,7 +31,7 @@ func main() {
 
 	// Initialize i18n manager
 	i18nManager := i18n.NewI18n()
-	if err := i18nManager.LoadTranslations("internal/i18n"); err != nil {
+	if err := i18nManager.LoadTranslations(); err != nil {
 		logger.WithError(err).Fatal("Failed to load translations")
 	}
 
