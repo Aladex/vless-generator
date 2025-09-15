@@ -1,10 +1,9 @@
 package templates
 
 import (
+	"embed"
 	"encoding/json"
 	"fmt"
-	"os"
-	"path/filepath"
 
 	"vless-generator/internal/config"
 
@@ -15,25 +14,24 @@ import (
 type Manager struct {
 	templates map[string]map[string]interface{}
 	logger    *logrus.Entry
+	configFS  embed.FS
 }
 
-// NewManager creates a new template manager
-func NewManager() *Manager {
+// NewManager creates a new template manager with embedded filesystem
+func NewManager(configFS embed.FS) *Manager {
 	return &Manager{
 		templates: make(map[string]map[string]interface{}),
 		logger:    logrus.WithField("component", "templates"),
+		configFS:  configFS,
 	}
 }
 
-// LoadTemplates loads all template files from the specified directory
-func (m *Manager) LoadTemplates(directory string, types []string) error {
-	m.logger.WithFields(logrus.Fields{
-		"directory": directory,
-		"types":     types,
-	}).Info("Loading configuration templates")
+// LoadTemplates loads embedded configuration templates from main package
+func (m *Manager) LoadTemplates(types []string) error {
+	m.logger.WithField("types", types).Info("Loading embedded configuration templates from templates directory")
 
 	for _, templateType := range types {
-		if err := m.loadTemplate(directory, templateType); err != nil {
+		if err := m.loadTemplate(templateType); err != nil {
 			return fmt.Errorf("failed to load template %s: %w", templateType, err)
 		}
 	}
@@ -42,18 +40,18 @@ func (m *Manager) LoadTemplates(directory string, types []string) error {
 	return nil
 }
 
-// loadTemplate loads a single template file
-func (m *Manager) loadTemplate(directory, templateType string) error {
-	templatePath := filepath.Join(directory, templateType+".json")
+// loadTemplate loads a single embedded template file from main package
+func (m *Manager) loadTemplate(templateType string) error {
+	templateFile := "templates/" + templateType + ".json"
 
 	m.logger.WithFields(logrus.Fields{
 		"type": templateType,
-		"path": templatePath,
-	}).Debug("Loading template file")
+		"file": templateFile,
+	}).Debug("Loading embedded template file")
 
-	data, err := os.ReadFile(templatePath)
+	data, err := m.configFS.ReadFile(templateFile)
 	if err != nil {
-		return fmt.Errorf("failed to read template file: %w", err)
+		return fmt.Errorf("failed to read embedded template file: %w", err)
 	}
 
 	var template map[string]interface{}

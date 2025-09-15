@@ -1,39 +1,47 @@
 package templates
 
 import (
+	"embed"
 	"html/template"
-	"path/filepath"
 	"strings"
 
-	"github.com/sirupsen/logrus"
 	"vless-generator/internal/config"
 	"vless-generator/internal/i18n"
+
+	"github.com/sirupsen/logrus"
 )
 
 // TemplateRenderer handles HTML template rendering
 type TemplateRenderer struct {
 	templates map[string]*template.Template
 	logger    *logrus.Entry
+	htmlFS    embed.FS
 }
 
-// NewTemplateRenderer creates a new template renderer
-func NewTemplateRenderer() *TemplateRenderer {
+// NewTemplateRenderer creates a new template renderer with embedded filesystem
+func NewTemplateRenderer(htmlFS embed.FS) *TemplateRenderer {
 	return &TemplateRenderer{
 		templates: make(map[string]*template.Template),
 		logger:    logrus.WithField("component", "template_renderer"),
+		htmlFS:    htmlFS,
 	}
 }
 
-// LoadTemplates loads HTML templates from the specified directory
-func (tr *TemplateRenderer) LoadTemplates(directory string) error {
-	tr.logger.WithField("directory", directory).Info("Loading HTML templates")
+// LoadTemplates loads embedded HTML templates from main package
+func (tr *TemplateRenderer) LoadTemplates() error {
+	tr.logger.Info("Loading embedded HTML templates from web/templates")
 
 	templateNames := []string{"home", "config"}
 
 	for _, name := range templateNames {
-		templatePath := filepath.Join(directory, name+".html")
+		templateFile := "web/templates/" + name + ".html"
 
-		tmpl, err := template.ParseFiles(templatePath)
+		templateContent, err := tr.htmlFS.ReadFile(templateFile)
+		if err != nil {
+			return err
+		}
+
+		tmpl, err := template.New(name).Parse(string(templateContent))
 		if err != nil {
 			return err
 		}

@@ -35,17 +35,17 @@ func main() {
 		logger.WithError(err).Fatal("Failed to load translations")
 	}
 
-	// Initialize template renderer
-	templateRenderer := templates.NewTemplateRenderer()
-	if err := templateRenderer.LoadTemplates("web/templates"); err != nil {
+	// Initialize template renderer with embedded HTML templates
+	templateRenderer := templates.NewTemplateRenderer(htmlTemplates)
+	if err := templateRenderer.LoadTemplates(); err != nil {
 		logger.WithError(err).Fatal("Failed to load HTML templates")
 	}
 
-	// Initialize template manager
-	templateManager := templates.NewManager()
+	// Initialize template manager with embedded configuration templates
+	templateManager := templates.NewManager(configTemplates)
 
-	// Load configuration templates (without static configuration)
-	if err := templateManager.LoadTemplates(cfg.Templates.Directory, cfg.Templates.Types); err != nil {
+	// Load configuration templates
+	if err := templateManager.LoadTemplates(cfg.Templates.Types); err != nil {
 		logger.WithError(err).Fatal("Failed to load configuration templates")
 	}
 
@@ -59,9 +59,8 @@ func main() {
 	http.HandleFunc("/qrcode", middleware.LoggingMiddleware(handler.QRCodeHandler))
 	http.HandleFunc("/health", middleware.LoggingMiddleware(handler.HealthHandler))
 
-	// Setup static file serving
-	fs := http.FileServer(http.Dir("web/static/"))
-	http.Handle("/static/", http.StripPrefix("/static/", fs))
+	// Setup static file serving with embedded files
+	http.Handle("/static/", http.StripPrefix("/static/", embeddedFileServer()))
 
 	// Setup graceful shutdown
 	setupGracefulShutdown(logger)
