@@ -12,27 +12,13 @@ services:
       - LOG_LEVEL=info
       - LOG_FORMAT=json
     command: [
-      "-server", "${VLESS_SERVER:-vless.example.com}",
-      "-server-port", "${VLESS_PORT:-443}",
-      "-ws-path", "${WS_PATH:-/websocket}",
-      "-dns-server", "${DNS_SERVER:-8.8.8.8}",
-      "-doh-server", "${DOH_SERVER:-https://223.5.5.5/dns-query}",
-      "-tun-address", "${TUN_ADDRESS:-172.19.0.1/28}",
-      "-mixed-port", "${MIXED_PORT:-2080}",
-      "-tun-mtu", "${TUN_MTU:-9000}",
+      "-port", "8080",
       "-log-level", "${LOG_LEVEL:-info}",
-      "-log-format", "${LOG_FORMAT:-json}",
-      "-port", "8080"
+      "-log-format", "${LOG_FORMAT:-json}"
     ]
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
     volumes:
-      # Optional: mount custom templates
-      # - ./custom-templates:/templates:ro
+      # Optional: mount custom templates if you modify embedded assets during development
+      # - ./templates:/templates:ro
       # Optional: mount logs directory
       # - ./logs:/var/log:rw

@@ -1,558 +1,146 @@
 # VLESS Config Generator
 
-A professional, containerized service for generating VLESS proxy configurations with QR codes. Built with Go, featuring structured logging, Docker support, and automated CI/CD.
+A small, container-friendly web service that generates VLESS client configs and QR codes. Built in Go with embedded HTML/CSS and JSON templates, structured logging, and simple health checks.
 
 ![Go Version](https://img.shields.io/badge/Go-1.21+-blue.svg)
 ![Docker](https://img.shields.io/badge/Docker-Supported-blue.svg)
-![License](https://img.shields.io/badge/License-MIT-green.svg)
 ![Build Status](https://github.com/aladex/vless-generator/workflows/Build%20and%20Push%20Docker%20Image/badge.svg)
 
-## 🚀 Features
+## Features
 
-- **Multiple Configuration Types**: Support for NekoBox and VLESS clients
-- **QR Code Generation**: Direct import via QR scanning
-- **Professional Logging**: Structured logging with Logrus (JSON/Text formats)
-- **Docker Ready**: Multi-architecture container support
-- **Health Monitoring**: Built-in health check endpoints
-- **Chrome Fingerprinting**: Enhanced security with uTLS
-- **Configurable**: Extensive command-line and environment configuration
-- **Production Ready**: Systemd service, graceful shutdown, error handling
+- VLESS config generation from a clean web UI
+- On-the-fly customization via URL query parameters
+- Built-in QR code endpoint and inline QR rendering
+- Embedded assets (no external files at runtime)
+- Structured logging with logrus
+- Health check endpoint for monitoring
 
-## 📋 Table of Contents
+## Quick start
 
-- [Quick Start](#quick-start)
-- [Installation](#installation)
-- [Docker Deployment](#docker-deployment)
-- [Configuration](#configuration)
-- [API Endpoints](#api-endpoints)
-- [Development](#development)
-- [GitHub Actions CI/CD](#github-actions-cicd)
-- [Contributing](#contributing)
-- [License](#license)
-
-## 🎯 Quick Start
-
-### Using Docker (Recommended)
+### Run locally
 
 ```bash
-# Pull and run the latest image
-docker run -d \
-  --name vless-generator \
-  -p 8080:8080 \
-  aladex/vless-generator:latest \
-  -server your-server.com \
-  -server-port 443 \
-  -ws-path /websocket
+# Build and run
+go run . -port 8080 -log-level info -log-format json
+
+# Open UI
+xdg-open http://localhost:8080/ || true
+
+# Health
+curl -s http://localhost:8080/health | jq .
 ```
 
-### Using Docker Compose
+### Docker
 
 ```bash
-# Clone the repository
-git clone https://github.com/aladex/vless-generator.git
-cd vless-generator
-
-# Copy and customize environment file
-cp .env.example .env
-nano .env
-
-# Start the service
-docker-compose up -d
-
-# View logs
-docker-compose logs -f
-```
-
-### Direct Installation
-
-```bash
-# Clone and build
-git clone https://github.com/aladex/vless-generator.git
-cd vless-generator
-go build .
-
-# Run with custom configuration
-./vless-generator -server your-server.com -log-level debug
-
-# Or install as systemd service
-sudo ./install.sh
-```
-
-## 📦 Installation
-
-### Prerequisites
-
-- **Go 1.21+** (for building from source)
-- **Docker** (for containerized deployment)
-- **Linux** (for systemd service installation)
-
-### Method 1: Docker (Recommended)
-
-```bash
-# Using docker-compose
-docker-compose up -d
-
-# Or direct docker run
-docker run -d \
-  --name vless-generator \
-  -p 8080:8080 \
-  -e LOG_LEVEL=info \
-  aladex/vless-generator:latest
-```
-
-### Method 2: Pre-built Binary
-
-```bash
-# Download from releases
-wget https://github.com/aladex/vless-generator/releases/latest/download/vless-generator-linux-amd64
-chmod +x vless-generator-linux-amd64
-./vless-generator-linux-amd64 -server your-server.com
-```
-
-### Method 3: Build from Source
-
-```bash
-git clone https://github.com/aladex/vless-generator.git
-cd vless-generator
-go mod download
-go build -o vless-generator .
-./vless-generator -server your-server.com
-```
-
-### Method 4: System Service Installation
-
-```bash
-git clone https://github.com/aladex/vless-generator.git
-cd vless-generator
-sudo ./install.sh
-```
-
-This will:
-- Build the binary
-- Install to `/opt/vless-generator`
-- Create systemd service
-- Start the service automatically
-
-## 🐳 Docker Deployment
-
-### Environment Variables
-
-Create a `.env` file from the template:
-
-```bash
-cp .env.example .env
-```
-
-Example `.env` configuration:
-
-```env
-VLESS_SERVER=your-server.example.com
-VLESS_PORT=443
-WS_PATH=/websocket
-DNS_SERVER=8.8.8.8
-DOH_SERVER=https://223.5.5.5/dns-query
-LOG_LEVEL=info
-LOG_FORMAT=json
-```
-
-### Docker Compose Configuration
-
-```yaml
-version: '3.8'
-
-services:
-  vless-generator:
-    image: aladex/vless-generator:latest
-    container_name: vless-generator
-    ports:
-      - "8080:8080"
-    environment:
-      - LOG_LEVEL=info
-      - LOG_FORMAT=json
-    command: [
-      "-server", "your-server.com",
-      "-server-port", "443",
-      "-ws-path", "/websocket",
-      "-log-level", "info"
-    ]
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-```
-
-### Docker Commands
-
-```bash
-# Build locally
+# Build image from this repo
 docker build -t vless-generator .
 
-# Run with custom configuration
-docker run -d \
-  --name vless-generator \
-  -p 8080:8080 \
-  vless-generator \
-  -server your-server.com \
-  -server-port 443 \
-  -ws-path /websocket \
-  -log-level debug
+# Run container
+docker run --rm -p 8080:8080 vless-generator \
+  -port 8080 -log-level info -log-format json
 
-# View logs
-docker logs -f vless-generator
-
-# Health check
-docker exec vless-generator wget -qO- http://localhost:8080/health
+# Open UI
+xdg-open http://localhost:8080/ || true
 ```
 
-## ⚙️ Configuration
+Note: All configuration like server, port, ws-path, etc. is provided dynamically via the UI or URL query parameters, not CLI flags.
 
-### Command Line Flags
+## How it works
 
-| Flag | Default | Description |
-|------|---------|-------------|
-| `-port` | `8080` | HTTP server port |
-| `-server` | `vless.example.com` | VLESS server address |
-| `-server-port` | `443` | VLESS server port |
-| `-ws-path` | `/websocket` | WebSocket path |
-| `-dns-server` | `8.8.8.8` | Remote DNS server |
-| `-doh-server` | `https://223.5.5.5/dns-query` | DNS over HTTPS server |
-| `-tun-address` | `172.19.0.1/28` | TUN interface address |
-| `-mixed-port` | `2080` | Mixed proxy port |
-| `-tun-mtu` | `9000` | TUN interface MTU |
-| `-log-level` | `info` | Log level (debug, info, warn, error) |
-| `-log-format` | `json` | Log format (json, text) |
+- The service exposes a home page with a guided wizard that builds a link to a config page.
+- Config pages are served at: `/{type}/{uuid}`. Currently supported type(s): `vless`.
+- Dynamic parameters are passed via query string and applied to the embedded JSON template at request time.
 
-### Example Configurations
+Example config page URL:
 
-#### Development Mode
-```bash
-./vless-generator \
-  -server localhost \
-  -server-port 8443 \
-  -log-level debug \
-  -log-format text
+```
+http://localhost:8080/vless/bae71742-94e0-4dd5-935f-070339819ba0?server=example.com&port=443&ws-path=/websocket&lang=en
 ```
 
-#### Production Mode
-```bash
-./vless-generator \
-  -server your-production-server.com \
-  -server-port 443 \
-  -ws-path /secure-websocket \
-  -log-level info \
-  -log-format json
-```
+## Endpoints
 
-#### Custom Network Configuration
-```bash
-./vless-generator \
-  -server vpn.example.com \
-  -dns-server 1.1.1.1 \
-  -doh-server https://cloudflare-dns.com/dns-query \
-  -tun-address 10.0.0.1/24
-```
+- GET `/` — Home page (wizard UI)
+- GET `/<type>/<uuid>` — Render HTML config page with QR code (type: `vless`)
+- GET `/config/<type>/<uuid>.json` — Download generated JSON configuration
+- POST `/qrcode` — Generate a QR code PNG for a provided VLESS URL (form field: `url`)
+- GET `/health` — Health/status JSON
 
-## 🌐 API Endpoints
-
-### Configuration Pages
-
-| Endpoint | Description | Example |
-|----------|-------------|---------|
-| `/<type>/<uuid>` | Configuration page with QR code | `/vless/abc123-def456` |
-| | Supported types: `vless`, `neko` | `/neko/abc123-def456` |
-
-### Download Endpoints
-
-| Endpoint | Description | Example |
-|----------|-------------|---------|
-| `/config/<type>/<uuid>.json` | Download JSON configuration | `/config/vless/abc123-def456.json` |
-
-### Service Endpoints
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/health` | GET | Health check and service info |
-
-### Example Usage
-
-```bash
-# Visit configuration page
-curl http://localhost:8080/vless/bae71742-94e0-4dd5-935f-070339819ba0
-
-# Download configuration
-curl -O http://localhost:8080/config/vless/bae71742-94e0-4dd5-935f-070339819ba0.json
-
-# Health check
-curl http://localhost:8080/health
-```
-
-### Health Check Response
+Health example:
 
 ```json
 {
   "status": "healthy",
-  "timestamp": "2025-08-31T16:32:48Z",
+  "timestamp": "2025-01-01T00:00:00Z",
   "service": "vless-generator",
   "version": "1.0.0",
-  "templates": ["neko", "vless"]
+  "templates": ["vless"]
 }
 ```
 
-## 🛠️ Development
+## Dynamic query parameters
 
-### Project Structure
+Pass these as query string fields to config pages or downloads:
 
-```
-vless-generator/
-├── main.go                    # Application entry point
-├── go.mod                     # Go module definition
-├── Dockerfile                 # Container definition
-├── docker-compose.yml         # Local development setup
-├── .github/workflows/         # CI/CD pipelines
-├── templates/                 # Configuration templates
-│   ├── neko.json
-│   └── vless.json
-└── internal/                  # Internal packages
-    ├── config/                # Configuration management
-    ├── handlers/              # HTTP handlers
-    ├── middleware/            # HTTP middleware
-    ├── templates/             # Template management
-    └── utils/                 # Utility functions
-```
+- `server` — VLESS server hostname (e.g., example.com)
+- `port` — VLESS server port (e.g., 443)
+- `ws-path` — WebSocket path (e.g., /websocket)
+- `dns-server` — DNS server (e.g., 8.8.8.8)
+- `doh-server` — DoH server URL (e.g., https://223.5.5.5/dns-query)
+- `tun-address` — TUN IPv4 address/CIDR (e.g., 172.19.0.1/28)
+- `mixed-port` — Mixed inbound port (e.g., 2080)
+- `tun-mtu` — TUN MTU (e.g., 9000)
+- `lang` — UI language (en, ru)
 
-### Local Development
+Example JSON download:
 
 ```bash
-# Clone repository
-git clone https://github.com/aladex/vless-generator.git
-cd vless-generator
+curl -s "http://localhost:8080/config/vless/bae71742-94e0-4dd5-935f-070339819ba0.json?server=example.com&port=443&ws-path=/websocket" | jq .
+```
 
-# Install dependencies
+## Build from source
+
+```bash
+# Install deps
 go mod download
 
-# Run with live reload (install air first: go install github.com/cosmtrek/air@latest)
-air
-
-# Or run directly
-go run . -server localhost -log-level debug -log-format text
-
-# Run tests
-go test ./...
-
-# Build for production
+# Build binary
 go build -ldflags="-w -s" -o vless-generator .
+
+# Run it
+./vless-generator -port 8080 -log-level info -log-format json
 ```
 
-### Adding New Configuration Types
+## Project structure (high level)
 
-1. Create a new template file in `templates/`:
-```bash
-cp templates/vless.json templates/newtype.json
-# Edit newtype.json with your configuration
+```
+.
+├── main.go                 # HTTP wiring and server
+├── internal/
+│   ├── config/             # Flags, logging, and dynamic query parsing
+│   ├── handlers/           # HTTP handlers
+│   ├── middleware/         # Logging middleware
+│   └── templates/          # Template manager + HTML renderer
+├── web/
+│   ├── static/             # Embedded CSS and assets
+│   └── templates/          # Embedded HTML templates
+└── templates/              # Embedded JSON config templates (e.g., vless.json)
 ```
 
-2. Update the template types in `internal/config/config.go`:
-```go
-cfg.Templates.Types = []string{"neko", "vless", "newtype"}
-```
+All HTML, CSS, and JSON templates are embedded via Go's embed; no external volumes are required at runtime.
 
-3. Test the new configuration:
-```bash
-go run . -server test.com
-# Visit: http://localhost:8080/newtype/test-uuid
-```
+## Kubernetes and Compose notes
 
-### Code Standards
+- The included `docker-compose.yml` and `k8s-manifest.yaml` in this repo may show legacy CLI flags like `-server`, `-ws-path`, etc. The current version uses query parameters instead. It's safe to run the service with only logging/port flags, for example:
+  - `command: ["-port", "8080", "-log-level", "info", "-log-format", "json"]`
+- Then provide config details via the UI or by adding query parameters to the URLs (see examples above).
 
-- **Go Modules**: Use Go 1.21+ with modules
-- **Structured Logging**: Use logrus with structured fields
-- **Error Handling**: Wrap errors with context
-- **Testing**: Write tests for new functionality
-- **Documentation**: Document exported functions and types
+## Contributing
 
-## 🔄 GitHub Actions CI/CD
+- Keep logs structured and user-facing text in English
+- Add tests when changing public behavior
+- If you add a new configuration type, place its JSON in `templates/` and include it in `internal/config/config.go` (Templates.Types).
 
-### Automated Workflows
+## License
 
-The project includes automated CI/CD with the following features:
-
-- **Testing**: Automated Go tests and linting
-- **Multi-platform Builds**: Linux AMD64 and ARM64
-- **Docker Hub Publishing**: Automatic image builds and pushes
-- **Semantic Versioning**: Tag-based releases
-- **Security Scanning**: Dependency and container scanning
-
-### Required Secrets
-
-Configure these secrets in your GitHub repository:
-
-| Secret | Description |
-|--------|-------------|
-| `DOCKERHUB_USERNAME` | Your Docker Hub username |
-| `DOCKERHUB_TOKEN` | Docker Hub access token |
-
-### Triggering Builds
-
-```bash
-# Push to main branch (builds latest tag)
-git push origin main
-
-# Create a release (builds versioned tag)
-git tag v1.0.0
-git push origin v1.0.0
-
-# Pull request (runs tests only)
-# No Docker image push on PRs
-```
-
-### Deployment Artifacts
-
-Each build generates deployment artifacts including:
-- `docker-compose.yml` for production deployment
-- `README.md` with deployment instructions
-- Multi-architecture Docker images
-
-## 📊 Monitoring and Logging
-
-### Log Formats
-
-**JSON Format (Production)**:
-```json
-{
-  "level": "info",
-  "time": "2025-08-31T16:32:48Z",
-  "component": "handlers",
-  "method": "GET",
-  "path": "/vless/abc123",
-  "status_code": 200,
-  "duration_ms": 15,
-  "remote_addr": "127.0.0.1"
-}
-```
-
-**Text Format (Development)**:
-```
-INFO[2025-08-31 16:32:48] HTTP request completed successfully component=handlers method=GET path=/vless/abc123 status_code=200
-```
-
-### Monitoring Integration
-
-The service provides metrics suitable for:
-- **Prometheus**: HTTP metrics via structured logs
-- **Grafana**: Visualization of request patterns
-- **ELK Stack**: Log aggregation and analysis
-- **Docker Health Checks**: Container orchestration
-
-## 🔧 Troubleshooting
-
-### Common Issues
-
-**Port Already in Use**:
-```bash
-# Check what's using the port
-sudo lsof -i :8080
-
-# Use a different port
-./vless-generator -port 8081
-```
-
-**Template Loading Errors**:
-```bash
-# Ensure templates directory exists
-ls -la templates/
-
-# Check file permissions
-chmod 644 templates/*.json
-```
-
-**Docker Build Issues**:
-```bash
-# Clear Docker cache
-docker system prune -a
-
-# Rebuild without cache
-docker build --no-cache -t vless-generator .
-```
-
-### Debug Mode
-
-Enable debug logging for detailed information:
-
-```bash
-# Command line
-./vless-generator -log-level debug -log-format text
-
-# Docker
-docker run -d \
-  --name vless-generator-debug \
-  -p 8080:8080 \
-  aladex/vless-generator:latest \
-  -log-level debug
-```
-
-### Health Monitoring
-
-```bash
-# Check service health
-curl http://localhost:8080/health
-
-# Monitor logs
-docker logs -f vless-generator
-
-# Check systemd service
-sudo systemctl status vless-generator
-sudo journalctl -u vless-generator -f
-```
-
-## 🤝 Contributing
-
-We welcome contributions! Please follow these guidelines:
-
-1. **Fork the repository**
-2. **Create a feature branch**: `git checkout -b feature/amazing-feature`
-3. **Make your changes** with proper tests
-4. **Run tests**: `go test ./...`
-5. **Commit changes**: `git commit -m "Add amazing feature"`
-6. **Push to branch**: `git push origin feature/amazing-feature`
-7. **Open a Pull Request**
-
-### Development Setup
-
-```bash
-# Fork and clone
-git clone https://github.com/aladex/vless-generator.git
-cd vless-generator
-
-# Install pre-commit hooks (optional)
-go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
-
-# Run linting
-golangci-lint run
-
-# Run tests with coverage
-go test -race -coverprofile=coverage.out ./...
-go tool cover -html=coverage.out
-```
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- [Logrus](https://github.com/sirupsen/logrus) for structured logging
-- [go-qrcode](https://github.com/skip2/go-qrcode) for QR code generation
-- [Docker](https://docker.com) for containerization
-- [GitHub Actions](https://github.com/features/actions) for CI/CD
-
-## 📞 Support
-
-- **Issues**: [GitHub Issues](https://github.com/aladex/vless-generator/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/aladex/vless-generator/discussions)
-- **Documentation**: [Wiki](https://github.com/aladex/vless-generator/wiki)
-
----
-
-**Made with ❤️ by the VLESS Generator Team**
+Specify a license for your fork/repo if needed.
