@@ -131,9 +131,8 @@ All HTML, CSS, and JSON templates are embedded via Go's embed; no external volum
 
 ## Kubernetes and Compose notes
 
-- The included `docker-compose.yml` and `k8s-manifest.yaml` in this repo may show legacy CLI flags like `-server`, `-ws-path`, etc. The current version uses query parameters instead. It's safe to run the service with only logging/port flags, for example:
-  - `command: ["-port", "8080", "-log-level", "info", "-log-format", "json"]`
-- Then provide config details via the UI or by adding query parameters to the URLs (see examples above).
+- Provided `docker-compose.yml` and `k8s-manifest.yaml` run the service with only service flags: `-port`, `-log-level`, `-log-format`.
+- Provide VLESS connection details via the UI or by adding query parameters to the URLs (see examples above).
 
 ## Contributing
 

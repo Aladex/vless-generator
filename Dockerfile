@@ -34,19 +34,11 @@ COPY --from=builder /usr/share/zoneinfo /usr/share/zoneinfo
 # Copy our binary
 COPY --from=builder /app/vless-generator /vless-generator
 
-# Copy templates
+# Copy templates (not required at runtime; assets are embedded, but kept for reference)
 COPY --from=builder /app/templates /templates
-
-# Create a non-root user
-# Note: In scratch image, we can't use adduser, so we'll run as root
-# For better security, consider using alpine:latest as base instead
 
 # Expose port
 EXPOSE 8080
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD ["/vless-generator", "-help"] || exit 1
 
 # Set environment variables
 ENV LOG_LEVEL=info

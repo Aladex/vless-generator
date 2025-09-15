@@ -108,19 +108,11 @@ jobs:
               - LOG_LEVEL=info
               - LOG_FORMAT=json
             command: [
-              "-server", "vless.example.com",
-              "-server-port", "443",
-              "-ws-path", "/websocket",
+              "-port", "8080",
               "-log-level", "info",
               "-log-format", "json"
             ]
             restart: unless-stopped
-            healthcheck:
-              test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1"]
-              interval: 30s
-              timeout: 10s
-              retries: 3
-              start_period: 40s
         EOF
         
         cat > deployment/README.md << EOF
@@ -134,9 +126,7 @@ jobs:
           --name vless-generator \\
           -p 8080:8080 \\
           ${{ env.REGISTRY }}/${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:latest \\
-          -server your-server.com \\
-          -server-port 443 \\
-          -ws-path /websocket
+          -port 8080 -log-level info -log-format json
         \`\`\`
         
         ## Docker Compose
@@ -152,24 +142,18 @@ jobs:
         docker-compose down
         \`\`\`
         
-        ## Configuration
+        ## Configuration Model
         
-        Available environment variables and command-line options:
-        - \`-server\`: VLESS server address (default: vless.example.com)
-        - \`-server-port\`: VLESS server port (default: 443)
-        - \`-ws-path\`: WebSocket path (default: /websocket)
-        - \`-port\`: Service port (default: 8080)
-        - \`-log-level\`: Log level (debug, info, warn, error)
-        - \`-log-format\`: Log format (json, text)
+        Service-level flags: \`-port\`, \`-log-level\`, \`-log-format\`.
+        VLESS parameters (server, port, ws-path, etc.) are provided via URL query parameters or the UI.
         
         ## Health Check
         
-        The service exposes a health check endpoint at \`/health\`.
+        The service exposes a health check at \`/health\`.
         
         ## Usage
         
-        Visit: http://localhost:8080/vless/your-uuid-here
-        Or: http://localhost:8080/neko/your-uuid-here
+        Visit: http://localhost:8080/vless/<uuid>?server=example.com&port=443&ws-path=/websocket
         EOF
 
     - name: Upload deployment artifacts
